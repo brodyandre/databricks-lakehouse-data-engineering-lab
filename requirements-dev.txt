@@ -2,3 +2,4 @@ pytest
 pytest-cov
 ruff
 Faker
+pyspark==4.1.0
