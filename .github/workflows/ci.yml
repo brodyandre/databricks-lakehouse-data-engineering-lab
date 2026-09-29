@@ -34,5 +34,11 @@ jobs:
       - name: Check Ruff formatting
         run: ruff format --check .
 
+      - name: Generate synthetic retail dataset
+        run: python data/generator/generate_retail_data.py
+
+      - name: Validate synthetic retail dataset
+        run: python data/generator/validate_retail_data.py
+
       - name: Run tests
         run: pytest
