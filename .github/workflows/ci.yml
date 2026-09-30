@@ -42,5 +42,8 @@ jobs:
       - name: Generate Bronze layer
         run: python data/generator/run_bronze_ingestion.py
 
+      - name: Generate Silver layer
+        run: python data/generator/run_silver_processing.py
+
       - name: Run tests
         run: pytest
