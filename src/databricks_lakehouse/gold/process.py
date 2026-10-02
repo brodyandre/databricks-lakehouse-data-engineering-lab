@@ -15,9 +15,17 @@ from databricks_lakehouse.gold.analytics import (
 )
 
 
-def write_parquet(dataframe: DataFrame, target_path: Path) -> None:
-    """Write a DataFrame to Parquet."""
-    dataframe.write.mode("overwrite").format("parquet").save(str(target_path))
+def write_delta(dataframe: DataFrame, target_path: Path) -> None:
+    """Write a DataFrame to Delta Lake."""
+    dataframe.write.mode("overwrite").format("delta").save(str(target_path))
+
+
+def read_silver_delta(
+    spark: SparkSession,
+    dataset_path: Path,
+) -> DataFrame:
+    """Read a Silver dataset stored in Delta format."""
+    return spark.read.format("delta").load(str(dataset_path))
 
 
 def process_gold(
@@ -25,11 +33,26 @@ def process_gold(
     silver_dir: Path,
     gold_dir: Path,
 ) -> dict[str, int]:
-    """Build all Gold analytical datasets."""
-    customers = spark.read.parquet(str(silver_dir / "customers"))
-    products = spark.read.parquet(str(silver_dir / "products"))
-    orders = spark.read.parquet(str(silver_dir / "orders"))
-    order_items = spark.read.parquet(str(silver_dir / "order_items"))
+    """Process Silver datasets into Gold analytical datasets."""
+    customers = read_silver_delta(
+        spark=spark,
+        dataset_path=silver_dir / "customers",
+    )
+
+    products = read_silver_delta(
+        spark=spark,
+        dataset_path=silver_dir / "products",
+    )
+
+    orders = read_silver_delta(
+        spark=spark,
+        dataset_path=silver_dir / "orders",
+    )
+
+    order_items = read_silver_delta(
+        spark=spark,
+        dataset_path=silver_dir / "order_items",
+    )
 
     order_revenue = build_order_revenue(
         orders=orders,
@@ -68,10 +91,11 @@ def process_gold(
     counts: dict[str, int] = {}
 
     for dataset_name, dataframe in outputs.items():
-        write_parquet(
+        write_delta(
             dataframe=dataframe,
             target_path=gold_dir / dataset_name,
         )
+
         counts[dataset_name] = dataframe.count()
 
     return counts

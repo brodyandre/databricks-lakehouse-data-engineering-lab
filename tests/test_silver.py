@@ -65,7 +65,7 @@ def silver_outputs(
         metrics=metrics,
     )
 
-    (metrics_df.write.mode("overwrite").format("parquet").save(str(quality_dir)))
+    metrics_df.write.mode("overwrite").format("parquet").save(str(quality_dir))
 
     return {
         "silver": silver_dir,
@@ -85,7 +85,7 @@ def test_silver_expected_counts(
     expected_count: int,
 ) -> None:
     """Ensure Silver datasets contain the expected valid record counts."""
-    dataframe = spark.read.parquet(str(silver_outputs["silver"] / dataset_name))
+    dataframe = spark.read.format("delta").load(str(silver_outputs["silver"] / dataset_name))
 
     assert dataframe.count() == expected_count
 
@@ -111,7 +111,7 @@ def test_silver_customers_have_no_blank_emails(
     silver_outputs: dict[str, Path],
 ) -> None:
     """Ensure Silver customers contain no blank email values."""
-    dataframe = spark.read.parquet(str(silver_outputs["silver"] / "customers"))
+    dataframe = spark.read.format("delta").load(str(silver_outputs["silver"] / "customers"))
 
     invalid_count = dataframe.filter(
         F.col("email").isNull() | (F.trim(F.col("email")) == "")
@@ -125,7 +125,7 @@ def test_silver_order_items_have_valid_quantities(
     silver_outputs: dict[str, Path],
 ) -> None:
     """Ensure Silver order items contain only positive quantities."""
-    dataframe = spark.read.parquet(str(silver_outputs["silver"] / "order_items"))
+    dataframe = spark.read.format("delta").load(str(silver_outputs["silver"] / "order_items"))
 
     invalid_count = dataframe.filter(F.col("quantity").isNull() | (F.col("quantity") <= 0)).count()
 

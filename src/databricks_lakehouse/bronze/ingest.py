@@ -72,7 +72,7 @@ def ingest_dataset(
 
     record_count = dataframe.count()
 
-    dataframe.write.mode("overwrite").format("parquet").save(str(target_path))
+    dataframe.write.mode("overwrite").format("delta").save(str(target_path))
 
     return record_count
 

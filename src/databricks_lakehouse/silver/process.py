@@ -39,6 +39,19 @@ def write_parquet(dataframe: DataFrame, target_path: Path) -> None:
     dataframe.write.mode("overwrite").format("parquet").save(str(target_path))
 
 
+def write_delta(dataframe: DataFrame, target_path: Path) -> None:
+    """Write a DataFrame to Delta Lake."""
+    dataframe.write.mode("overwrite").format("delta").save(str(target_path))
+
+
+def read_bronze_delta(
+    spark: SparkSession,
+    dataset_path: Path,
+) -> DataFrame:
+    """Read a Bronze dataset stored in Delta format."""
+    return spark.read.format("delta").load(str(dataset_path))
+
+
 def process_customers(
     spark: SparkSession,
     bronze_dir: Path,
@@ -47,7 +60,10 @@ def process_customers(
     batch_id: str,
 ) -> dict[str, object]:
     """Process customers from Bronze into Silver."""
-    dataframe = spark.read.parquet(str(bronze_dir / "customers"))
+    dataframe = read_bronze_delta(
+        spark=spark,
+        dataset_path=bronze_dir / "customers",
+    )
 
     input_count = dataframe.count()
 
@@ -58,7 +74,7 @@ def process_customers(
     valid_count = valid.count()
     rejected_count = rejected.count()
 
-    write_parquet(valid, silver_dir / "customers")
+    write_delta(valid, silver_dir / "customers")
     write_parquet(rejected, rejected_dir / "customers")
 
     return build_quality_metrics(
@@ -78,7 +94,10 @@ def process_order_items(
     batch_id: str,
 ) -> dict[str, object]:
     """Process order items from Bronze into Silver."""
-    dataframe = spark.read.parquet(str(bronze_dir / "order_items"))
+    dataframe = read_bronze_delta(
+        spark=spark,
+        dataset_path=bronze_dir / "order_items",
+    )
 
     input_count = dataframe.count()
 
@@ -89,7 +108,7 @@ def process_order_items(
     valid_count = valid.count()
     rejected_count = rejected.count()
 
-    write_parquet(valid, silver_dir / "order_items")
+    write_delta(valid, silver_dir / "order_items")
     write_parquet(rejected, rejected_dir / "order_items")
 
     return build_quality_metrics(
@@ -110,7 +129,10 @@ def process_passthrough_dataset(
     batch_id: str,
 ) -> dict[str, object]:
     """Process datasets without custom rejection rules."""
-    dataframe = spark.read.parquet(str(bronze_dir / dataset_name))
+    dataframe = read_bronze_delta(
+        spark=spark,
+        dataset_path=bronze_dir / dataset_name,
+    )
 
     input_count = dataframe.count()
 
@@ -118,7 +140,7 @@ def process_passthrough_dataset(
 
     valid_count = valid.count()
 
-    write_parquet(valid, silver_dir / dataset_name)
+    write_delta(valid, silver_dir / dataset_name)
 
     return build_quality_metrics(
         dataset_name=dataset_name,
