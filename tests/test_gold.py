@@ -59,7 +59,7 @@ def test_gold_expected_counts(
     expected_count: int,
 ) -> None:
     """Ensure Gold datasets contain the expected record counts."""
-    dataframe = spark.read.parquet(str(gold_dir / dataset_name))
+    dataframe = spark.read.format("delta").load(str(gold_dir / dataset_name))
 
     assert dataframe.count() == expected_count
 
@@ -69,7 +69,7 @@ def test_order_revenue_contains_only_commercial_statuses(
     gold_dir: Path,
 ) -> None:
     """Ensure order revenue contains only completed or shipped orders."""
-    dataframe = spark.read.parquet(str(gold_dir / "order_revenue"))
+    dataframe = spark.read.format("delta").load(str(gold_dir / "order_revenue"))
 
     invalid_count = dataframe.filter(~F.col("order_status").isin("completed", "shipped")).count()
 
@@ -81,7 +81,7 @@ def test_order_revenue_has_positive_revenue(
     gold_dir: Path,
 ) -> None:
     """Ensure Gold orders contain positive revenue."""
-    dataframe = spark.read.parquet(str(gold_dir / "order_revenue"))
+    dataframe = spark.read.format("delta").load(str(gold_dir / "order_revenue"))
 
     invalid_count = dataframe.filter(
         F.col("order_revenue").isNull() | (F.col("order_revenue") <= 0)
@@ -95,7 +95,7 @@ def test_product_revenue_has_all_products(
     gold_dir: Path,
 ) -> None:
     """Ensure product revenue contains all products represented in Gold."""
-    dataframe = spark.read.parquet(str(gold_dir / "product_revenue"))
+    dataframe = spark.read.format("delta").load(str(gold_dir / "product_revenue"))
 
     assert dataframe.select("product_id").distinct().count() == 100
 
@@ -105,7 +105,7 @@ def test_category_revenue_has_all_categories(
     gold_dir: Path,
 ) -> None:
     """Ensure category revenue contains all expected categories."""
-    dataframe = spark.read.parquet(str(gold_dir / "category_revenue"))
+    dataframe = spark.read.format("delta").load(str(gold_dir / "category_revenue"))
 
     categories = {row["category"] for row in dataframe.select("category").collect()}
 
@@ -124,7 +124,7 @@ def test_customer_revenue_has_valid_customer_count(
     gold_dir: Path,
 ) -> None:
     """Ensure customer revenue contains the expected active customers."""
-    dataframe = spark.read.parquet(str(gold_dir / "customer_revenue"))
+    dataframe = spark.read.format("delta").load(str(gold_dir / "customer_revenue"))
 
     assert dataframe.select("customer_id").distinct().count() == 476
 
@@ -134,7 +134,7 @@ def test_customer_revenue_has_no_blank_emails(
     gold_dir: Path,
 ) -> None:
     """Ensure rejected Silver customers do not reappear in Gold."""
-    dataframe = spark.read.parquet(str(gold_dir / "customer_revenue"))
+    dataframe = spark.read.format("delta").load(str(gold_dir / "customer_revenue"))
 
     invalid_count = dataframe.filter(
         F.col("email").isNull() | (F.trim(F.col("email")) == "")
@@ -148,8 +148,8 @@ def test_business_kpis_are_consistent_with_customer_revenue(
     gold_dir: Path,
 ) -> None:
     """Ensure KPI active customers match customer Gold population."""
-    kpis = spark.read.parquet(str(gold_dir / "business_kpis"))
-    customers = spark.read.parquet(str(gold_dir / "customer_revenue"))
+    kpis = spark.read.format("delta").load(str(gold_dir / "business_kpis"))
+    customers = spark.read.format("delta").load(str(gold_dir / "customer_revenue"))
 
     active_customers = kpis.first()["active_customers"]
     customer_count = customers.select("customer_id").distinct().count()
@@ -162,7 +162,7 @@ def test_business_kpis_match_expected_values(
     gold_dir: Path,
 ) -> None:
     """Ensure business KPIs match deterministic source data."""
-    dataframe = spark.read.parquet(str(gold_dir / "business_kpis"))
+    dataframe = spark.read.format("delta").load(str(gold_dir / "business_kpis"))
 
     row = dataframe.first()
 
@@ -179,8 +179,8 @@ def test_category_revenue_matches_total_revenue(
     gold_dir: Path,
 ) -> None:
     """Ensure category revenue reconciles with overall Gold revenue."""
-    categories = spark.read.parquet(str(gold_dir / "category_revenue"))
-    kpis = spark.read.parquet(str(gold_dir / "business_kpis"))
+    categories = spark.read.format("delta").load(str(gold_dir / "category_revenue"))
+    kpis = spark.read.format("delta").load(str(gold_dir / "business_kpis"))
 
     category_total = categories.agg(F.sum("category_revenue").alias("total")).first()["total"]
 

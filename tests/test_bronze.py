@@ -69,7 +69,7 @@ def test_bronze_preserves_source_counts(
     expected_count: int,
 ) -> None:
     """Ensure Bronze preserves the number of source records."""
-    dataframe = spark.read.parquet(str(bronze_dir / dataset_name))
+    dataframe = spark.read.format("delta").load(str(bronze_dir / dataset_name))
 
     assert dataframe.count() == expected_count
 
@@ -79,7 +79,7 @@ def test_bronze_contains_ingestion_metadata(
     bronze_dir: Path,
 ) -> None:
     """Ensure technical ingestion metadata is present."""
-    dataframe = spark.read.parquet(str(bronze_dir / "customers"))
+    dataframe = spark.read.format("delta").load(str(bronze_dir / "customers"))
 
     expected_metadata = {
         "_ingestion_timestamp",
@@ -95,7 +95,7 @@ def test_bronze_batch_id_is_preserved(
     bronze_dir: Path,
 ) -> None:
     """Ensure all records receive the requested batch identifier."""
-    dataframe = spark.read.parquet(str(bronze_dir / "customers"))
+    dataframe = spark.read.format("delta").load(str(bronze_dir / "customers"))
 
     batch_ids = {row["_batch_id"] for row in dataframe.select("_batch_id").distinct().collect()}
 
@@ -107,7 +107,7 @@ def test_bronze_source_file_is_recorded(
     bronze_dir: Path,
 ) -> None:
     """Ensure source lineage information is populated."""
-    dataframe = spark.read.parquet(str(bronze_dir / "customers"))
+    dataframe = spark.read.format("delta").load(str(bronze_dir / "customers"))
 
     missing_source_files = dataframe.filter(
         F.col("_source_file").isNull() | (F.col("_source_file") == "")
@@ -121,7 +121,7 @@ def test_bronze_preserves_invalid_customer_emails(
     bronze_dir: Path,
 ) -> None:
     """Ensure Bronze does not silently clean source quality issues."""
-    dataframe = spark.read.parquet(str(bronze_dir / "customers"))
+    dataframe = spark.read.format("delta").load(str(bronze_dir / "customers"))
 
     invalid_count = dataframe.filter(
         F.col("email").isNull() | (F.trim(F.col("email")) == "")
@@ -135,7 +135,7 @@ def test_bronze_preserves_invalid_order_item_quantities(
     bronze_dir: Path,
 ) -> None:
     """Ensure invalid quantities remain available for Silver processing."""
-    dataframe = spark.read.parquet(str(bronze_dir / "order_items"))
+    dataframe = spark.read.format("delta").load(str(bronze_dir / "order_items"))
 
     invalid_count = dataframe.filter(F.col("quantity") <= 0).count()
 
