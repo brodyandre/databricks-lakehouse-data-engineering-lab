@@ -1,0 +1,36 @@
+bundle:
+  name: databricks_lakehouse_data_engineering_lab
+  uuid: ee58e3ba-e7df-4e75-8082-4accd2591380
+
+include:
+  - resources/databricks/*.yml
+
+variables:
+  catalog:
+    description: Catalog used by the project
+    default: workspace
+
+  schema:
+    description: Schema used by the project
+
+targets:
+  dev:
+    mode: development
+    default: true
+
+    workspace:
+      host: https://dbc-12ec4f0c-c1a6.cloud.databricks.com
+
+    variables:
+      catalog: workspace
+      schema: ${workspace.current_user.short_name}
+
+  prod:
+    mode: production
+
+    workspace:
+      host: https://dbc-12ec4f0c-c1a6.cloud.databricks.com
+
+    variables:
+      catalog: workspace
+      schema: prod
