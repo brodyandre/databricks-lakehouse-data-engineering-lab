@@ -1,0 +1,17 @@
+resources:
+  jobs:
+    lakehouse_smoke_test:
+      name: lakehouse_smoke_test
+
+      tasks:
+        - task_key: smoke_test
+
+          notebook_task:
+            notebook_path: ../../notebooks/databricks/smoke_test.py
+
+          environment_key: default
+
+      environments:
+        - environment_key: default
+          spec:
+            environment_version: "5"
