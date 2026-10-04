@@ -1,6 +1,5 @@
-# ruff: noqa: F821
-
 # Databricks notebook source
+# ruff: noqa: F821
 
 from pyspark.sql import functions as F
 
