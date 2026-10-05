@@ -11,6 +11,9 @@ requires-python = ">=3.12"
 authors = [
     { name = "Luiz André de Souza" }
 ]
+dependencies = [
+    "Faker>=37,<41"
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
