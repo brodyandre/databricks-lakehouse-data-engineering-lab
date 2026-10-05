@@ -5,6 +5,11 @@ bundle:
 include:
   - resources/databricks/*.yml
 
+artifacts:
+  python_artifact:
+    type: whl
+    build: python -m pip wheel . --no-deps -w dist
+
 variables:
   catalog:
     description: Catalog used by the project
